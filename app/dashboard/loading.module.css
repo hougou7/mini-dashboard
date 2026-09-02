@@ -1,0 +1,118 @@
+.loading {
+  animation: fadeIn 180ms ease-out;
+}
+
+.heading {
+  margin-bottom: 24px;
+}
+
+.title,
+.subtitle,
+.card,
+.activityTitle,
+.activityRow {
+  display: block;
+  background: #e5e7eb;
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+.title {
+  width: 180px;
+  height: 32px;
+  border-radius: 6px;
+}
+
+.subtitle {
+  width: 260px;
+  height: 18px;
+  margin-top: 10px;
+  border-radius: 5px;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.card {
+  height: 96px;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+}
+
+.activity {
+  margin-top: 24px;
+  padding: 20px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+}
+
+.activityTitle {
+  width: 150px;
+  height: 24px;
+  margin-bottom: 20px;
+  border-radius: 5px;
+}
+
+.activityRow {
+  width: 100%;
+  height: 18px;
+  margin-top: 16px;
+  border-radius: 5px;
+}
+
+.activityRow:first-of-type {
+  margin-top: 0;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (max-width: 834px) {
+  .stats {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loading,
+  .title,
+  .subtitle,
+  .card,
+  .activityTitle,
+  .activityRow {
+    animation: none;
+  }
+}

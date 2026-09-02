@@ -1,22 +1,19 @@
-const users = [
-  {
-    id: 1,
-    name: "Alice",
-    email: "alice@example.com",
-  },
-  {
-    id: 2,
-    name: "Bob",
-    email: "bob@example.com",
-  },
-  {
-    id: 3,
-    name: "Tom",
-    email: "tom@example.com",
-  },
-];
+type User = {
+    id: number;
+    name: string;
+    email: string;
+};
 
-export default function UserPage(){
+async function getUsers(): Promise<User[]> {
+    const res = await fetch("https://jsonplaceholder.typicode.com/users");
+    if(!res.ok){
+        throw new Error("Failed to fetch users");
+    }  
+    return (await res.json()) as User[];
+}
+
+export default async function UserPage(){
+    const users = await getUsers();
     return(
         <div>
             <h1>Users</h1>
