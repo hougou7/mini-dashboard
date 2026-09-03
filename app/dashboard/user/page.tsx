@@ -1,31 +1,26 @@
-type User = {
-    id: number;
-    name: string;
-    email: string;
-};
+import UserSection from "@/components/UserSection/UserSection";
+import type { User } from "@/components/UserList/UserList";
+
+import styles from "./page.module.css";
 
 async function getUsers(): Promise<User[]> {
-    const res = await fetch("https://jsonplaceholder.typicode.com/users");
-    if(!res.ok){
+    const response = await fetch("https://jsonplaceholder.typicode.com/users");
+
+    if (!response.ok) {
         throw new Error("Failed to fetch users");
-    }  
-    return (await res.json()) as User[];
+    }
+
+    return (await response.json()) as User[];
 }
 
 export default async function UserPage(){
     const users = await getUsers();
+
     return(
-        <div>
+        <div className={styles.page}>
             <h1>Users</h1>
 
-            <div>
-                {users.map((user) => (
-                    <div key={user.id}>
-                        <strong>{user.name}</strong>
-                        <p>{user.email}</p>
-                    </div>
-                ))}
-            </div>
+            <UserSection initialUsers={users} />
         </div>
     );
 }

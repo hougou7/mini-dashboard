@@ -1,0 +1,12 @@
+.page h1 {
+  margin-bottom: 24px;
+}
+
+.page section + section {
+  margin-top: 32px;
+}
+
+.page h2 {
+  margin-bottom: 14px;
+  font-size: 20px;
+}
