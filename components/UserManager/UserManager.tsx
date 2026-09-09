@@ -9,11 +9,17 @@ type UserManagerProps = {
   onUsersChange: (users: User[]) => void;
 };
 
+type UserForm = Pick<User, "name" | "email">;
+
+const emptyUserForm: UserForm = {
+  name: "",
+  email: "",
+};
+
 export default function UserManager({ initialUsers, onUsersChange }: UserManagerProps) {
     const users = initialUsers;
 
-    const[name, setName] = useState("");
-    const[email, setEmail] = useState("");
+    const [userForm, setUserForm] = useState<UserForm>(emptyUserForm);
 
     const [isRefreshing, setIsRefreshing] = useState(false);
     const isRefreshInProgress = useRef(false);
@@ -44,15 +50,14 @@ export default function UserManager({ initialUsers, onUsersChange }: UserManager
         };
     }, [refreshUsers]);
     function handleAddUser() {
-        if(!name.trim() || !email.trim()) return;
+        if(!userForm.name.trim() || !userForm.email.trim()) return;
         const newUser: User = {
             id: Math.max(0, ...users.map((user) => user.id)) + 1,
-            name: name.trim(),
-            email: email.trim(),
+            name: userForm.name.trim(),
+            email: userForm.email.trim(),
         }
         onUsersChange([...users, newUser]);
-        setName("");
-        setEmail("");
+        setUserForm(emptyUserForm);
     }
 
     function handleDeleteUser(id: number) {
@@ -64,14 +69,14 @@ export default function UserManager({ initialUsers, onUsersChange }: UserManager
                 <input
                 type="text"
                 placeholder="Name"
-                value={name}
-                onChange={(e) => setName(e.target.value)} 
+                value={userForm.name}
+                onChange={(e) => setUserForm((form) => ({ ...form, name: e.target.value }))}
                 />
                 <input
                 type="email"
                 placeholder="Email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)} 
+                value={userForm.email}
+                onChange={(e) => setUserForm((form) => ({ ...form, email: e.target.value }))}
                 />
                 <button type="button" onClick={handleAddUser}>Add User</button>
                 <button

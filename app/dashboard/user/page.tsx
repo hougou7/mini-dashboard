@@ -4,13 +4,17 @@ import type { User } from "@/components/UserList/UserList";
 import styles from "./page.module.css";
 
 async function getUsers(): Promise<User[]> {
-    const response = await fetch("https://jsonplaceholder.typicode.com/users");
+    try {
+        const response = await fetch("https://jsonplaceholder.typicode.com/users");
 
-    if (!response.ok) {
-        throw new Error("Failed to fetch users");
+        if (!response.ok) {
+            return [];
+        }
+
+        return (await response.json()) as User[];
+    } catch {
+        return [];
     }
-
-    return (await response.json()) as User[];
 }
 
 export default async function UserPage(){
