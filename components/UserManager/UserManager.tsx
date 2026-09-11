@@ -1,12 +1,12 @@
 "use client";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useState } from "react";
+import { useUsers } from "@/components/UserContext/UserContext";
 import type { User } from "@/components/UserList/UserList";
 import styles from "./UserManager.module.css";
 
 
 type UserManagerProps = {
-  initialUsers: User[];
-  onUsersChange: (users: User[]) => void;
+  hideUserList?: boolean;
 };
 
 type UserForm = Pick<User, "name" | "email">;
@@ -16,39 +16,14 @@ const emptyUserForm: UserForm = {
   email: "",
 };
 
-export default function UserManager({ initialUsers, onUsersChange }: UserManagerProps) {
-    const users = initialUsers;
+export default function UserManager({
+  hideUserList = false,
+}: UserManagerProps) {
+    const { state, dispatch, refreshUsers } = useUsers();
+    const { users, isRefreshing } = state;
 
     const [userForm, setUserForm] = useState<UserForm>(emptyUserForm);
 
-    const [isRefreshing, setIsRefreshing] = useState(false);
-    const isRefreshInProgress = useRef(false);
-
-    const refreshUsers = useCallback(async () => {
-        if (isRefreshInProgress.current) return;
-
-        isRefreshInProgress.current = true;
-        setIsRefreshing(true);
-
-        try {
-            const response = await fetch("/api/users", { cache: "no-store" });
-            if (!response.ok) return;
-
-            const data: User[] = await response.json();
-            onUsersChange(data);
-        } finally {
-            isRefreshInProgress.current = false;
-            setIsRefreshing(false);
-        }
-    }, [onUsersChange]);
-
-    useEffect(() => {
-        const timer = setInterval(refreshUsers, 10000);
-
-        return () => {
-            clearInterval(timer);
-        };
-    }, [refreshUsers]);
     function handleAddUser() {
         if(!userForm.name.trim() || !userForm.email.trim()) return;
         const newUser: User = {
@@ -56,12 +31,12 @@ export default function UserManager({ initialUsers, onUsersChange }: UserManager
             name: userForm.name.trim(),
             email: userForm.email.trim(),
         }
-        onUsersChange([...users, newUser]);
+        dispatch({ type: "userAdded", user: newUser });
         setUserForm(emptyUserForm);
     }
 
     function handleDeleteUser(id: number) {
-        onUsersChange(users.filter((user) => user.id !== id));
+        dispatch({ type: "userDeleted", id });
     }
     return (
         <div className={styles.manager}>
@@ -88,19 +63,21 @@ export default function UserManager({ initialUsers, onUsersChange }: UserManager
                 </button>
             </div>
             <p className={styles.total}>Total users: {users.length}</p>
-            <div className={styles.list}>
-                {users.map((user) => (
-                    <div className={styles.item} key={user.id}>
-                        <div>
-                            <strong>{user.name}</strong>
-                            <p>{user.email}</p>
+            {!hideUserList && (
+                <div className={styles.list}>
+                    {users.map((user) => (
+                        <div className={styles.item} key={user.id}>
+                            <div>
+                                <strong>{user.name}</strong>
+                                <p>{user.email}</p>
+                            </div>
+                            <button type="button" onClick={() => handleDeleteUser(user.id)}>
+                                Delete
+                            </button>
                         </div>
-                        <button type="button" onClick={() => handleDeleteUser(user.id)}>
-                            Delete
-                        </button>
-                    </div>
-                ))}
-            </div>
+                    ))}
+                </div>
+            )}
         </div>
     );
 }
