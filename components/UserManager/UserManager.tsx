@@ -7,6 +7,8 @@ import styles from "./UserManager.module.css";
 
 type UserManagerProps = {
   hideUserList?: boolean;
+  editingUser?: User | null;
+  onEditingChange?: (user: User | null) => void;
 };
 
 type UserForm = Pick<User, "name" | "email">;
@@ -18,51 +20,86 @@ const emptyUserForm: UserForm = {
 
 export default function UserManager({
   hideUserList = false,
+  editingUser = null,
+  onEditingChange,
 }: UserManagerProps) {
-    const { state, dispatch, refreshUsers } = useUsers();
-    const { users, isRefreshing } = state;
+    const { state, refreshUsers, createUser, updateUser, deleteUser } = useUsers();
+    const { users, isRefreshing, isMutating, error } = state;
 
-    const [userForm, setUserForm] = useState<UserForm>(emptyUserForm);
+    const [userForm, setUserForm] = useState<UserForm>(() =>
+      editingUser
+        ? { name: editingUser.name, email: editingUser.email }
+        : emptyUserForm,
+    );
 
-    function handleAddUser() {
-        if(!userForm.name.trim() || !userForm.email.trim()) return;
-        const newUser: User = {
-            id: Math.max(0, ...users.map((user) => user.id)) + 1,
-            name: userForm.name.trim(),
-            email: userForm.email.trim(),
-        }
-        dispatch({ type: "userAdded", user: newUser });
+    async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+      event.preventDefault();
+      const input = {
+        name: userForm.name.trim(),
+        email: userForm.email.trim(),
+      };
+
+      if (!input.name || !input.email) return;
+
+      const succeeded = editingUser
+        ? await updateUser(editingUser.id, input)
+        : await createUser(input);
+
+      if (succeeded) {
         setUserForm(emptyUserForm);
+        onEditingChange?.(null);
+      }
     }
 
-    function handleDeleteUser(id: number) {
-        dispatch({ type: "userDeleted", id });
+    async function handleDeleteUser(user: User) {
+      if (!window.confirm(`Delete ${user.name}?`)) return;
+      await deleteUser(user.id);
     }
+
     return (
         <div className={styles.manager}>
-            <div className={styles.form}>
+            <form className={styles.form} onSubmit={handleSubmit}>
+                <div className={styles.formHeading}>
+                  <h3>{editingUser ? "Edit user" : "Add user"}</h3>
+                  {editingUser && (
+                    <button
+                      type="button"
+                      className={styles.cancelButton}
+                      onClick={() => onEditingChange?.(null)}
+                    >
+                      Cancel
+                    </button>
+                  )}
+                </div>
                 <input
                 type="text"
+                aria-label="User name"
                 placeholder="Name"
                 value={userForm.name}
                 onChange={(e) => setUserForm((form) => ({ ...form, name: e.target.value }))}
+                required
                 />
                 <input
                 type="email"
+                aria-label="User email"
                 placeholder="Email"
                 value={userForm.email}
                 onChange={(e) => setUserForm((form) => ({ ...form, email: e.target.value }))}
+                required
                 />
-                <button type="button" onClick={handleAddUser}>Add User</button>
+                <button type="submit" disabled={isMutating}>
+                  {isMutating ? "Saving..." : editingUser ? "Save changes" : "Add user"}
+                </button>
                 <button
                     type="button"
                     onClick={refreshUsers}
-                    disabled={isRefreshing}
+                    disabled={isRefreshing || isMutating}
                 >
-                    {isRefreshing ? "Refreshing..." : "Refresh"}
+                    {isRefreshing ? "Refreshing..." : "Refresh users"}
                 </button>
-            </div>
-            <p className={styles.total}>Total users: {users.length}</p>
+            </form>
+            {error && <p className={styles.error} role="alert">{error}</p>}
+            <p className={styles.total}>{users.length} total users</p>
             {!hideUserList && (
                 <div className={styles.list}>
                     {users.map((user) => (
@@ -71,9 +108,14 @@ export default function UserManager({
                                 <strong>{user.name}</strong>
                                 <p>{user.email}</p>
                             </div>
-                            <button type="button" onClick={() => handleDeleteUser(user.id)}>
-                                Delete
-                            </button>
+                            <div className={styles.itemActions}>
+                              <button type="button" onClick={() => onEditingChange?.(user)}>
+                                  Edit
+                              </button>
+                              <button type="button" onClick={() => handleDeleteUser(user)} disabled={isMutating}>
+                                  Delete
+                              </button>
+                            </div>
                         </div>
                     ))}
                 </div>

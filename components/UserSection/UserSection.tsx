@@ -21,16 +21,17 @@ export default function UserSection({ initialUsers }: UserSectionProps) {
 }
 
 function UserSectionContent() {
-  const { state } = useUsers();
-  const { users } = state;
+  const { state, deleteUser } = useUsers();
+  const { users, isMutating } = state;
   const [searchQuery, setSearchQuery] = useState("");
+  const [editingUser, setEditingUser] = useState<User | null>(null);
   const normalizedSearchQuery = searchQuery.trim();
 
   const filteredUsers = useMemo(() => {
     const normalizedQuery = normalizedSearchQuery.toLowerCase();
 
     if (!normalizedQuery) {
-      return [];
+      return users;
     }
 
     return users.filter((user) =>
@@ -38,11 +39,25 @@ function UserSectionContent() {
     );
   }, [normalizedSearchQuery, users]);
 
+  async function handleDeleteUser(user: User) {
+    if (!window.confirm(`Delete ${user.name}?`)) return;
+
+    const succeeded = await deleteUser(user.id);
+    if (succeeded && editingUser?.id === user.id) {
+      setEditingUser(null);
+    }
+  }
+
   return (
     <>
       <section>
         <h2 className={styles.heading}>User Manager</h2>
-        <UserManager hideUserList />
+        <UserManager
+          key={editingUser?.id ?? "new-user"}
+          hideUserList
+          editingUser={editingUser}
+          onEditingChange={setEditingUser}
+        />
       </section>
 
       <section className={styles.listSection}>
@@ -75,13 +90,21 @@ function UserSectionContent() {
         <p className={styles.resultCount} aria-live="polite">
           {normalizedSearchQuery
             ? `${filteredUsers.length} of ${users.length} users found`
-            : "Search by name or email to view users"}
+            : `${users.length} users`}
         </p>
-        {normalizedSearchQuery && filteredUsers.length > 0 && (
-          <UserList users={filteredUsers} searchQuery={normalizedSearchQuery} />
+        {filteredUsers.length > 0 && (
+          <UserList
+            users={filteredUsers}
+            searchQuery={normalizedSearchQuery}
+            onEdit={setEditingUser}
+            onDelete={handleDeleteUser}
+            isMutating={isMutating}
+          />
         )}
-        {normalizedSearchQuery && filteredUsers.length === 0 && (
-          <p className={styles.emptyState}>No users match your search.</p>
+        {filteredUsers.length === 0 && (
+          <p className={styles.emptyState}>
+            {normalizedSearchQuery ? "No users match your search." : "No users yet."}
+          </p>
         )}
       </section>
     </>

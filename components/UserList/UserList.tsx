@@ -11,6 +11,9 @@ export type User = {
 type UserListProps = {
   users: User[];
   searchQuery?: string;
+  onEdit?: (user: User) => void;
+  onDelete?: (user: User) => void;
+  isMutating?: boolean;
 };
 
 function HighlightedText({ text, query }: { text: string; query: string }): ReactNode {
@@ -45,13 +48,31 @@ function HighlightedText({ text, query }: { text: string; query: string }): Reac
   return parts.length > 0 ? parts : text;
 }
 
-export default function UserList({ users, searchQuery = "" }: UserListProps) {
+export default function UserList({
+  users,
+  searchQuery = "",
+  onEdit,
+  onDelete,
+  isMutating = false,
+}: UserListProps) {
   return (
     <ul className={styles.list}>
       {users.map((user) => (
         <li className={styles.item} key={user.id}>
-          <span><HighlightedText text={user.name} query={searchQuery} /></span>
-          <span><HighlightedText text={user.email} query={searchQuery} /></span>
+          <div className={styles.userDetails}>
+            <strong><HighlightedText text={user.name} query={searchQuery} /></strong>
+            <span><HighlightedText text={user.email} query={searchQuery} /></span>
+          </div>
+          {(onEdit || onDelete) && (
+            <div className={styles.actions}>
+              {onEdit && <button type="button" onClick={() => onEdit(user)}>Edit</button>}
+              {onDelete && (
+                <button type="button" onClick={() => onDelete(user)} disabled={isMutating}>
+                  Delete
+                </button>
+              )}
+            </div>
+          )}
         </li>
       ))}
     </ul>
