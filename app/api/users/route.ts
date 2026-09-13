@@ -1,6 +1,16 @@
 import { NextResponse } from "next/server";
 
+import { userInputSchema } from "@/lib/validation";
 import { createUser, listUsers } from "./store";
+
+function isUniqueConstraintError(error: unknown) {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code?: string }).code === "SQLITE_CONSTRAINT_UNIQUE"
+  );
+}
 
 export async function GET() {
   try {
@@ -15,19 +25,22 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const body = (await request.json()) as { name?: string; email?: string };
-    const name = body.name?.trim();
-    const email = body.email?.trim();
-
-    if (!name || !email) {
+    const result = userInputSchema.safeParse(await request.json());
+    if (!result.success) {
       return NextResponse.json(
-        { error: "Name and email are required" },
+        { error: "Invalid user data", details: result.error.flatten().fieldErrors },
         { status: 400 },
       );
     }
 
-    return NextResponse.json(await createUser({ name, email }), { status: 201 });
-  } catch {
+    return NextResponse.json(await createUser(result.data), { status: 201 });
+  } catch (error) {
+    if (isUniqueConstraintError(error)) {
+      return NextResponse.json(
+        { error: "A user with this email already exists" },
+        { status: 409 },
+      );
+    }
     return NextResponse.json(
       { error: "Invalid user data" },
       { status: 400 },

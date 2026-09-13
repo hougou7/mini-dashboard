@@ -11,6 +11,10 @@
   transition: width 200ms ease;
 }
 
+.hydrating {
+  visibility: hidden;
+}
+
 .logo {
   margin-bottom: 32px;
 
@@ -27,12 +31,35 @@
 }
 
 .nav a {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
   padding: 12px 16px;
 
   border-radius: 8px;
 
   color: #d1d5db;
   text-decoration: none;
+}
+
+.icon {
+  display: inline-flex;
+  flex: 0 0 20px;
+  width: 20px;
+  height: 20px;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
 }
 
 .nav a:hover {
@@ -50,6 +77,16 @@
 
 .closed {
   width: 64px;
+}
+
+.closed .nav a {
+  justify-content: center;
+  gap: 0;
+  padding: 12px 8px;
+}
+
+.closed .label {
+  display: none;
 }
 
 .toggle {

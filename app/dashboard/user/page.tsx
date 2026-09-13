@@ -1,24 +1,13 @@
 import UserSection from "@/components/UserSection/UserSection";
 import type { User } from "@/components/UserList/UserList";
+import { listUsers } from "@/app/api/users/store";
 
 import styles from "./page.module.css";
 
-async function getUsers(): Promise<User[]> {
-    try {
-        const response = await fetch("https://jsonplaceholder.typicode.com/users");
+export const dynamic = "force-dynamic";
 
-        if (!response.ok) {
-            return [];
-        }
-
-        return (await response.json()) as User[];
-    } catch {
-        return [];
-    }
-}
-
-export default async function UserPage(){
-    const users = await getUsers();
+export default function UserPage(){
+    const users: User[] = listUsers();
 
     return(
         <div className={styles.page}>
