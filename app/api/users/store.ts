@@ -1,31 +1,38 @@
-import type { User } from "@/components/UserList/UserList";
+import { asc, eq } from "drizzle-orm";
+
 import db from "@/lib/db";
+import { users, type UserRow } from "@/lib/schema";
 
-type UserInput = Pick<User, "name" | "email">;
+export type UserRecord = Pick<UserRow, "id" | "name" | "email">;
+type UserInput = Pick<UserRecord, "name" | "email">;
 
-export function listUsers(): User[] {
+export function listUsers(): UserRecord[] {
   return db
-    .prepare("SELECT id, name, email FROM users ORDER BY id ASC")
-    .all() as User[];
+    .select({ id: users.id, name: users.name, email: users.email })
+    .from(users)
+    .orderBy(asc(users.id))
+    .all();
 }
 
-export function createUser(input: UserInput): User {
-  const result = db
-    .prepare("INSERT INTO users (name, email) VALUES (?, ?)")
-    .run(input.name, input.email);
+export function createUser(input: UserInput): UserRecord {
   return db
-    .prepare("SELECT id, name, email FROM users WHERE id = ?")
-    .get(result.lastInsertRowid) as User;
+    .insert(users)
+    .values(input)
+    .returning({ id: users.id, name: users.name, email: users.email })
+    .get();
 }
 
-export function updateUser(id: number, input: UserInput): User | null {
-  const result = db
-    .prepare("UPDATE users SET name = ?, email = ? WHERE id = ?")
-    .run(input.name, input.email, id);
-  if (result.changes === 0) return null;
-  return db.prepare("SELECT id, name, email FROM users WHERE id = ?").get(id) as User;
+export function updateUser(id: number, input: UserInput): UserRecord | null {
+  return (
+    db
+      .update(users)
+      .set(input)
+      .where(eq(users.id, id))
+      .returning({ id: users.id, name: users.name, email: users.email })
+      .get() ?? null
+  );
 }
 
 export function removeUser(id: number): boolean {
-  return db.prepare("DELETE FROM users WHERE id = ?").run(id).changes > 0;
+  return db.delete(users).where(eq(users.id, id)).run().changes > 0;
 }

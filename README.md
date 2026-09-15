@@ -10,6 +10,21 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+## Database migrations
+
+This project uses Drizzle ORM with SQLite. Migrations in `drizzle/` are applied automatically when the server starts. You can also apply them explicitly:
+
+```bash
+npm run db:migrate
+```
+
+When the schema changes, generate and apply a new migration:
+
+```bash
+npm run db:generate
+npm run db:migrate
+```
+
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
