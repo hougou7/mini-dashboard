@@ -13,11 +13,14 @@ type UserSectionProps = {
   initialUsers: User[];
 };
 
+const PAGE_SIZE = 10;
+
 export default function UserSection({ initialUsers }: UserSectionProps) {
   const serviceState = useUserServiceState(initialUsers);
   const { isMutating, deleteUser } = serviceState;
   const users: User[] = serviceState.users;
   const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const normalizedSearchQuery = searchQuery.trim();
 
@@ -32,6 +35,16 @@ export default function UserSection({ initialUsers }: UserSectionProps) {
       `${user.name} ${user.email}`.toLowerCase().includes(normalizedQuery),
     );
   }, [normalizedSearchQuery, users]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredUsers.length / PAGE_SIZE));
+  const page = Math.min(currentPage, totalPages);
+  const pageStart = (page - 1) * PAGE_SIZE;
+  const visibleUsers = filteredUsers.slice(pageStart, pageStart + PAGE_SIZE);
+
+  function handleSearchChange(value: string) {
+    setSearchQuery(value);
+    setCurrentPage(1);
+  }
 
   async function handleDeleteUser(user: User) {
     if (!window.confirm(`Delete ${user.name}?`)) return;
@@ -66,14 +79,14 @@ export default function UserSection({ initialUsers }: UserSectionProps) {
                 type="search"
                 placeholder="Search by name or email"
                 value={searchQuery}
-                onChange={(event) => setSearchQuery(event.target.value)}
+                onChange={(event) => handleSearchChange(event.target.value)}
               />
               {searchQuery && (
                 <button
                   type="button"
                   className={styles.clearButton}
                   aria-label="Clear user search"
-                  onClick={() => setSearchQuery("")}
+                  onClick={() => handleSearchChange("")}
                 >
                   ×
                 </button>
@@ -82,18 +95,40 @@ export default function UserSection({ initialUsers }: UserSectionProps) {
           </div>
         </div>
         <p className={styles.resultCount} aria-live="polite">
-          {normalizedSearchQuery
-            ? `${filteredUsers.length} of ${users.length} users found`
-            : `${users.length} users`}
+          {filteredUsers.length > 0 &&
+            `Showing ${pageStart + 1}-${pageStart + visibleUsers.length} of ${filteredUsers.length}${normalizedSearchQuery ? ` matching users (${users.length} total)` : " users"}`}
         </p>
         {filteredUsers.length > 0 && (
-          <UserList
-            users={filteredUsers}
-            searchQuery={normalizedSearchQuery}
-            onEdit={setEditingUser}
-            onDelete={handleDeleteUser}
-            isMutating={isMutating}
-          />
+          <>
+            <UserList
+              users={visibleUsers}
+              searchQuery={normalizedSearchQuery}
+              onEdit={setEditingUser}
+              onDelete={handleDeleteUser}
+              isMutating={isMutating}
+            />
+            {totalPages > 1 && (
+              <nav className={styles.pagination} aria-label="User list pagination">
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage(page - 1)}
+                  disabled={page === 1}
+                >
+                  Previous
+                </button>
+                <span aria-live="polite">
+                  Page {page} of {totalPages}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage(page + 1)}
+                  disabled={page === totalPages}
+                >
+                  Next
+                </button>
+              </nav>
+            )}
+          </>
         )}
         {filteredUsers.length === 0 && (
           <p className={styles.emptyState}>
