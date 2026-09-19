@@ -1,0 +1,22 @@
+.heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px 16px;
+  margin-bottom: 24px;
+}
+
+.heading code {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.page section + section {
+  margin-top: 32px;
+}
+
+.page h2 {
+  margin-bottom: 14px;
+  font-size: 20px;
+}

@@ -32,8 +32,7 @@
   background: white;
 }
 
-.form button,
-.item button {
+.form button {
   min-height: 40px;
   padding: 0 16px;
   border: none;
@@ -64,49 +63,6 @@
 .total {
   margin-top: 18px;
   color: var(--text-secondary);
-}
-
-.list {
-  display: grid;
-  gap: 10px;
-  margin-top: 12px;
-}
-
-.item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding-top: 12px;
-  border-top: 1px solid var(--border-color);
-}
-
-.item p {
-  margin-top: 4px;
-  color: var(--text-secondary);
-  font-size: 14px;
-}
-
-.item button {
-  min-height: 34px;
-  color: #b91c1c;
-  background: #fee2e2;
-}
-
-.itemActions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.itemActions button:first-child {
-  color: var(--primary-color);
-  background: #dbeafe;
-}
-
-.itemActions button:disabled {
-  cursor: wait;
-  opacity: 0.7;
 }
 
 @media (max-width: 834px) {

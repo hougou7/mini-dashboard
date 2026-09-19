@@ -1,32 +1,37 @@
 "use client";
 import { useState } from "react";
-import { useUsers } from "@/components/UserContext/UserContext";
-import type { User } from "@/components/UserList/UserList";
+import type { useUserServiceState } from "@/lib/use-user-service-state";
+import type { User, UserInput } from "@/types/user";
 import styles from "./UserManager.module.css";
 
 
 type UserManagerProps = {
-  hideUserList?: boolean;
   editingUser?: User | null;
   onEditingChange?: (user: User | null) => void;
+  serviceState: ReturnType<typeof useUserServiceState>;
 };
 
-type UserForm = Pick<User, "name" | "email">;
-
-const emptyUserForm: UserForm = {
+const emptyUserForm: UserInput = {
   name: "",
   email: "",
 };
 
 export default function UserManager({
-  hideUserList = false,
   editingUser = null,
   onEditingChange,
+  serviceState,
 }: UserManagerProps) {
-    const { state, refreshUsers, createUser, updateUser, deleteUser } = useUsers();
-    const { users, isRefreshing, isMutating, error } = state;
+    const {
+      users,
+      isRefreshing,
+      isMutating,
+      error,
+      refreshUsers,
+      createUser,
+      updateUser,
+    } = serviceState;
 
-    const [userForm, setUserForm] = useState<UserForm>(() =>
+    const [userForm, setUserForm] = useState<UserInput>(() =>
       editingUser
         ? { name: editingUser.name, email: editingUser.email }
         : emptyUserForm,
@@ -49,11 +54,6 @@ export default function UserManager({
         setUserForm(emptyUserForm);
         onEditingChange?.(null);
       }
-    }
-
-    async function handleDeleteUser(user: User) {
-      if (!window.confirm(`Delete ${user.name}?`)) return;
-      await deleteUser(user.id);
     }
 
     return (
@@ -100,26 +100,6 @@ export default function UserManager({
             </form>
             {error && <p className={styles.error} role="alert">{error}</p>}
             <p className={styles.total}>{users.length} total users</p>
-            {!hideUserList && (
-                <div className={styles.list}>
-                    {users.map((user) => (
-                        <div className={styles.item} key={user.id}>
-                            <div>
-                                <strong>{user.name}</strong>
-                                <p>{user.email}</p>
-                            </div>
-                            <div className={styles.itemActions}>
-                              <button type="button" onClick={() => onEditingChange?.(user)}>
-                                  Edit
-                              </button>
-                              <button type="button" onClick={() => handleDeleteUser(user)} disabled={isMutating}>
-                                  Delete
-                              </button>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            )}
         </div>
     );
 }

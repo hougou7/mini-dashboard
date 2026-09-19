@@ -60,7 +60,7 @@ export default function Sidebar(){
             ),
         },
         {
-            href: "/dashboard/user",
+            href: "/dashboard/users",
             label: "Users",
             icon: (
                 <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -112,7 +112,11 @@ export default function Sidebar(){
                     <Link
                         href={link.href}
                         key={link.href}
-                        className={pathname === link.href ? styles.active : undefined}
+                        className={
+                            pathname === link.href || pathname.startsWith(`${link.href}/`)
+                                ? styles.active
+                                : undefined
+                        }
                         aria-label={!isopen ? link.label : undefined}
                         title={!isopen ? link.label : undefined}
                     >

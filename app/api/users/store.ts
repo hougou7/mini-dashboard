@@ -14,6 +14,16 @@ export function listUsers(): UserRecord[] {
     .all();
 }
 
+export function getUser(id: number): UserRecord | null {
+  return (
+    db
+      .select({ id: users.id, name: users.name, email: users.email })
+      .from(users)
+      .where(eq(users.id, id))
+      .get() ?? null
+  );
+}
+
 export function createUser(input: UserInput): UserRecord {
   return db
     .insert(users)

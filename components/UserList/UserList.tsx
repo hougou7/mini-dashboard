@@ -1,12 +1,9 @@
 import type { ReactNode } from "react";
+import Link from "next/link";
+
+import type { User } from "@/types/user";
 
 import styles from "./UserList.module.css";
-
-export type User = {
-  id: number;
-  name: string;
-  email: string;
-};
 
 type UserListProps = {
   users: User[];
@@ -60,7 +57,11 @@ export default function UserList({
       {users.map((user) => (
         <li className={styles.item} key={user.id}>
           <div className={styles.userDetails}>
-            <strong><HighlightedText text={user.name} query={searchQuery} /></strong>
+            <strong>
+              <Link href={`/dashboard/users/${user.id}`}>
+                <HighlightedText text={user.name} query={searchQuery} />
+              </Link>
+            </strong>
             <span><HighlightedText text={user.email} query={searchQuery} /></span>
           </div>
           {(onEdit || onDelete) && (

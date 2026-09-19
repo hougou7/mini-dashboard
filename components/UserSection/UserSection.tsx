@@ -2,9 +2,10 @@
 
 import { useMemo, useState } from "react";
 
-import UserList, { type User } from "@/components/UserList/UserList";
-import { UserProvider, useUsers } from "@/components/UserContext/UserContext";
+import UserList from "@/components/UserList/UserList";
 import UserManager from "@/components/UserManager/UserManager";
+import { useUserServiceState } from "@/lib/use-user-service-state";
+import type { User } from "@/types/user";
 
 import styles from "./UserSection.module.css";
 
@@ -13,16 +14,9 @@ type UserSectionProps = {
 };
 
 export default function UserSection({ initialUsers }: UserSectionProps) {
-  return (
-    <UserProvider initialUsers={initialUsers}>
-      <UserSectionContent />
-    </UserProvider>
-  );
-}
-
-function UserSectionContent() {
-  const { state, deleteUser } = useUsers();
-  const { users, isMutating } = state;
+  const serviceState = useUserServiceState(initialUsers);
+  const { isMutating, deleteUser } = serviceState;
+  const users: User[] = serviceState.users;
   const [searchQuery, setSearchQuery] = useState("");
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const normalizedSearchQuery = searchQuery.trim();
@@ -54,9 +48,9 @@ function UserSectionContent() {
         <h2 className={styles.heading}>User Manager</h2>
         <UserManager
           key={editingUser?.id ?? "new-user"}
-          hideUserList
           editingUser={editingUser}
           onEditingChange={setEditingUser}
+          serviceState={serviceState}
         />
       </section>
 

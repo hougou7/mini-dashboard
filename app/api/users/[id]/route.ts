@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { userInputSchema } from "@/lib/validation";
-import { removeUser, updateUser } from "../store";
+import { getUser, removeUser, updateUser } from "../store";
 
 function isUniqueConstraintError(error: unknown) {
   return (
@@ -20,6 +20,25 @@ async function getUserId(context: RouteContext) {
   const { id } = await context.params;
   const userId = Number(id);
   return Number.isInteger(userId) && userId > 0 ? userId : null;
+}
+
+export async function GET(_request: Request, context: RouteContext) {
+  const id = await getUserId(context);
+
+  if (id === null) {
+    return NextResponse.json({ error: "Invalid user id" }, { status: 400 });
+  }
+
+  try {
+    const user = getUser(id);
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    return NextResponse.json(user);
+  } catch {
+    return NextResponse.json({ error: "Failed to fetch user" }, { status: 500 });
+  }
 }
 
 export async function PUT(request: Request, context: RouteContext) {

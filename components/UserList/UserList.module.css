@@ -31,6 +31,12 @@
   overflow-wrap: anywhere;
 }
 
+.userDetails a:hover {
+  color: var(--primary-color);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 .actions {
   display: flex;
   flex-wrap: wrap;
