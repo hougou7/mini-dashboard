@@ -8,22 +8,25 @@ import {
   updateUser as updateUserRequest,
 } from "@/lib/user-service";
 import { userQueries } from "@/lib/user-queries";
-import type { User, UserInput } from "@/types/user";
+import type { User, UserInput, UserListParams, UserListResponse } from "@/types/user";
 
-export function useUserServiceState(initialUsers: User[]) {
+export function useUserServiceState(
+  initialPage: UserListResponse,
+  params: UserListParams,
+) {
   const queryClient = useQueryClient();
   const usersQuery = useQuery({
-    ...userQueries.listOptions(),
-    initialData: initialUsers,
+    ...userQueries.listOptions(params),
+    initialData:
+      params.page === 1 && params.search === "" ? initialPage : undefined,
   });
 
   const createMutation = useMutation({
     mutationKey: [...userQueries.all(), "create"],
     mutationFn: createUserRequest,
     onSuccess: async (user: User) => {
-      queryClient.setQueryData<User[]>(userQueries.all(), (users = []) => [...users, user]);
       queryClient.setQueryData(userQueries.detail(user.id), user);
-      await queryClient.invalidateQueries({ queryKey: userQueries.all() });
+      await queryClient.invalidateQueries({ queryKey: userQueries.lists() });
     },
   });
 
@@ -32,11 +35,8 @@ export function useUserServiceState(initialUsers: User[]) {
     mutationFn: ({ id, input }: { id: number; input: UserInput }) =>
       updateUserRequest(id, input),
     onSuccess: async (updatedUser: User) => {
-      queryClient.setQueryData<User[]>(userQueries.all(), (users = []) =>
-        users.map((user) => (user.id === updatedUser.id ? updatedUser : user)),
-      );
       queryClient.setQueryData(userQueries.detail(updatedUser.id), updatedUser);
-      await queryClient.invalidateQueries({ queryKey: userQueries.all() });
+      await queryClient.invalidateQueries({ queryKey: userQueries.lists() });
     },
   });
 
@@ -44,11 +44,8 @@ export function useUserServiceState(initialUsers: User[]) {
     mutationKey: [...userQueries.all(), "delete"],
     mutationFn: deleteUserRequest,
     onSuccess: async (_result: void, id: number) => {
-      queryClient.setQueryData<User[]>(userQueries.all(), (users = []) =>
-        users.filter((user) => user.id !== id),
-      );
       queryClient.removeQueries({ queryKey: userQueries.detail(id), exact: true });
-      await queryClient.invalidateQueries({ queryKey: userQueries.all() });
+      await queryClient.invalidateQueries({ queryKey: userQueries.lists() });
     },
   });
 
@@ -92,8 +89,14 @@ export function useUserServiceState(initialUsers: User[]) {
     createMutation.error ?? updateMutation.error ?? deleteMutation.error;
 
   return {
-    users: usersQuery.data,
+    users: usersQuery.data?.items ?? [],
+    total: usersQuery.data?.total ?? 0,
+    totalUsers: usersQuery.data?.totalUsers ?? 0,
+    page: usersQuery.data?.page ?? params.page,
+    pageSize: usersQuery.data?.pageSize ?? params.pageSize,
+    totalPages: usersQuery.data?.totalPages ?? 1,
     isRefreshing: usersQuery.isFetching,
+    isPlaceholderData: usersQuery.isPlaceholderData,
     isMutating:
       createMutation.isPending || updateMutation.isPending || deleteMutation.isPending,
     error: mutationError?.message ?? usersQuery.error?.message ?? null,

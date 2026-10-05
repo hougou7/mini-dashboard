@@ -22,7 +22,7 @@ export default function UserManager({
   serviceState,
 }: UserManagerProps) {
     const {
-      users,
+      totalUsers,
       isRefreshing,
       isMutating,
       error,
@@ -99,7 +99,7 @@ export default function UserManager({
                 </button>
             </form>
             {error && <p className={styles.error} role="alert">{error}</p>}
-            <p className={styles.total}>{users.length} total users</p>
+            <p className={styles.total}>{totalUsers} total users</p>
         </div>
     );
 }

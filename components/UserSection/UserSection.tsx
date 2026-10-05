@@ -1,50 +1,56 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 import UserList from "@/components/UserList/UserList";
 import UserManager from "@/components/UserManager/UserManager";
 import { useUserServiceState } from "@/lib/use-user-service-state";
-import type { User } from "@/types/user";
+import {
+  USER_PAGE_SIZE,
+  type User,
+  type UserListResponse,
+} from "@/types/user";
 
 import styles from "./UserSection.module.css";
 
 type UserSectionProps = {
-  initialUsers: User[];
+  initialPage: UserListResponse;
 };
 
-const PAGE_SIZE = 10;
-
-export default function UserSection({ initialUsers }: UserSectionProps) {
-  const serviceState = useUserServiceState(initialUsers);
-  const { isMutating, deleteUser } = serviceState;
-  const users: User[] = serviceState.users;
+export default function UserSection({ initialPage }: UserSectionProps) {
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [editingUser, setEditingUser] = useState<User | null>(null);
-  const normalizedSearchQuery = searchQuery.trim();
+  const serviceState = useUserServiceState(initialPage, {
+    search: debouncedSearchQuery,
+    page: currentPage,
+    pageSize: USER_PAGE_SIZE,
+  });
+  const {
+    users,
+    total,
+    totalUsers,
+    page,
+    totalPages,
+    isRefreshing,
+    isPlaceholderData,
+    isMutating,
+    deleteUser,
+  } = serviceState;
 
-  const filteredUsers = useMemo(() => {
-    const normalizedQuery = normalizedSearchQuery.toLowerCase();
+  useEffect(() => {
+    const debounceTimer = window.setTimeout(() => {
+      setCurrentPage(1);
+      setDebouncedSearchQuery(searchQuery.trim());
+    }, 300);
 
-    if (!normalizedQuery) {
-      return users;
-    }
+    return () => window.clearTimeout(debounceTimer);
+  }, [searchQuery]);
 
-    return users.filter((user) =>
-      `${user.name} ${user.email}`.toLowerCase().includes(normalizedQuery),
-    );
-  }, [normalizedSearchQuery, users]);
-
-  const totalPages = Math.max(1, Math.ceil(filteredUsers.length / PAGE_SIZE));
-  const page = Math.min(currentPage, totalPages);
-  const pageStart = (page - 1) * PAGE_SIZE;
-  const visibleUsers = filteredUsers.slice(pageStart, pageStart + PAGE_SIZE);
-
-  function handleSearchChange(value: string) {
-    setSearchQuery(value);
-    setCurrentPage(1);
-  }
+  const pageStart = (page - 1) * USER_PAGE_SIZE;
+  const isSearchPending = searchQuery.trim() !== debouncedSearchQuery;
+  const isListUpdating = isSearchPending || isRefreshing;
 
   async function handleDeleteUser(user: User) {
     if (!window.confirm(`Delete ${user.name}?`)) return;
@@ -52,6 +58,9 @@ export default function UserSection({ initialUsers }: UserSectionProps) {
     const succeeded = await deleteUser(user.id);
     if (succeeded && editingUser?.id === user.id) {
       setEditingUser(null);
+    }
+    if (succeeded && users.length === 1 && page > 1) {
+      setCurrentPage(page - 1);
     }
   }
 
@@ -79,14 +88,14 @@ export default function UserSection({ initialUsers }: UserSectionProps) {
                 type="search"
                 placeholder="Search by name or email"
                 value={searchQuery}
-                onChange={(event) => handleSearchChange(event.target.value)}
+                onChange={(event) => setSearchQuery(event.target.value)}
               />
               {searchQuery && (
                 <button
                   type="button"
                   className={styles.clearButton}
                   aria-label="Clear user search"
-                  onClick={() => handleSearchChange("")}
+                  onClick={() => setSearchQuery("")}
                 >
                   ×
                 </button>
@@ -95,14 +104,16 @@ export default function UserSection({ initialUsers }: UserSectionProps) {
           </div>
         </div>
         <p className={styles.resultCount} aria-live="polite">
-          {filteredUsers.length > 0 &&
-            `Showing ${pageStart + 1}-${pageStart + visibleUsers.length} of ${filteredUsers.length}${normalizedSearchQuery ? ` matching users (${users.length} total)` : " users"}`}
+          {total > 0 &&
+            `Showing ${pageStart + 1}-${pageStart + users.length} of ${total}${debouncedSearchQuery ? ` matching users (${totalUsers} total)` : " users"}`}
+          {isListUpdating && <span className={styles.fetching}>Updating...</span>}
         </p>
-        {filteredUsers.length > 0 && (
+        <div className={styles.listContent} aria-busy={isListUpdating}>
+        {total > 0 && (
           <>
             <UserList
-              users={visibleUsers}
-              searchQuery={normalizedSearchQuery}
+              users={users}
+              searchQuery={debouncedSearchQuery}
               onEdit={setEditingUser}
               onDelete={handleDeleteUser}
               isMutating={isMutating}
@@ -112,7 +123,7 @@ export default function UserSection({ initialUsers }: UserSectionProps) {
                 <button
                   type="button"
                   onClick={() => setCurrentPage(page - 1)}
-                  disabled={page === 1}
+                  disabled={page === 1 || isListUpdating || isPlaceholderData}
                 >
                   Previous
                 </button>
@@ -122,7 +133,7 @@ export default function UserSection({ initialUsers }: UserSectionProps) {
                 <button
                   type="button"
                   onClick={() => setCurrentPage(page + 1)}
-                  disabled={page === totalPages}
+                  disabled={page === totalPages || isListUpdating || isPlaceholderData}
                 >
                   Next
                 </button>
@@ -130,11 +141,12 @@ export default function UserSection({ initialUsers }: UserSectionProps) {
             )}
           </>
         )}
-        {filteredUsers.length === 0 && (
+        {total === 0 && !isListUpdating && (
           <p className={styles.emptyState}>
-            {normalizedSearchQuery ? "No users match your search." : "No users yet."}
+            {debouncedSearchQuery ? "No users match your search." : "No users yet."}
           </p>
         )}
+        </div>
       </section>
     </>
   );

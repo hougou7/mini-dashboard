@@ -1,7 +1,18 @@
 import { NextResponse } from "next/server";
 
 import { userInputSchema } from "@/lib/validation";
+import { USER_PAGE_SIZE } from "@/types/user";
 import { createUser, listUsers } from "./store";
+
+function getPositiveInteger(value: string | null, fallback: number, maximum: number) {
+  const parsedValue = Number(value);
+
+  if (!Number.isInteger(parsedValue) || parsedValue < 1) {
+    return fallback;
+  }
+
+  return Math.min(parsedValue, maximum);
+}
 
 function isUniqueConstraintError(error: unknown) {
   return (
@@ -12,9 +23,18 @@ function isUniqueConstraintError(error: unknown) {
   );
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    return NextResponse.json(await listUsers());
+    const searchParams = new URL(request.url).searchParams;
+    const search = (searchParams.get("search") ?? "").trim().slice(0, 100);
+    const page = getPositiveInteger(searchParams.get("page"), 1, 100_000);
+    const pageSize = getPositiveInteger(
+      searchParams.get("pageSize"),
+      USER_PAGE_SIZE,
+      100,
+    );
+
+    return NextResponse.json(listUsers({ search, page, pageSize }));
   } catch {
     return NextResponse.json(
       { error: "Failed to fetch users" },

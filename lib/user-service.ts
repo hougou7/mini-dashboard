@@ -1,4 +1,9 @@
-import type { User, UserInput } from "@/types/user";
+import type {
+  User,
+  UserInput,
+  UserListParams,
+  UserListResponse,
+} from "@/types/user";
 
 async function getErrorMessage(response: Response) {
   try {
@@ -25,8 +30,14 @@ async function request<T>(input: RequestInfo | URL, init?: RequestInit): Promise
   return response.json() as Promise<T>;
 }
 
-export function listUsers() {
-  return request<User[]>("/api/users", { cache: "no-store" });
+export function listUsers({ search, page, pageSize }: UserListParams) {
+  const searchParams = new URLSearchParams({
+    search,
+    page: String(page),
+    pageSize: String(pageSize),
+  });
+
+  return request<UserListResponse>(`/api/users?${searchParams}`, { cache: "no-store" });
 }
 
 export function getUser(id: number) {
